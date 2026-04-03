@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sambot</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #1e1e1e;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 18px; color: #fff; letter-spacing: -0.5px; }
+    header span { font-size: 12px; color: #555; }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .msg { max-width: 780px; }
+    .msg.user { align-self: flex-end; }
+    .msg.bot  { align-self: flex-start; }
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .bubble { background: #1a1a2e; color: #a0c4ff; }
+    .msg.bot  .bubble { background: #111; border: 1px solid #1e1e1e; }
+    .step {
+      font-size: 12px;
+      color: #666;
+      padding: 4px 8px;
+      border-left: 2px solid #333;
+      margin-top: 4px;
+    }
+    .step.tool_call   { border-color: #4a9eff; color: #4a9eff; }
+    .step.tool_result { border-color: #3d9970; color: #3d9970; }
+    #input-area {
+      padding: 16px 24px;
+      border-top: 1px solid #1e1e1e;
+      display: flex;
+      gap: 12px;
+    }
+    #input {
+      flex: 1;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: none;
+      outline: none;
+    }
+    #input:focus { border-color: #4a9eff; }
+    button {
+      background: #4a9eff;
+      border: none;
+      border-radius: 6px;
+      color: #000;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 20px;
+    }
+    button:disabled { background: #2a2a2a; color: #555; cursor: not-allowed; }
+    #status { font-size: 12px; color: #555; padding: 0 24px 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>sambot</h1>
+    <span id="conn-status">connecting...</span>
+  </header>
+  <div id="chat"></div>
+  <div id="status"></div>
+  <div id="input-area">
+    <textarea id="input" rows="2" placeholder="ask sambot to do something..."></textarea>
+    <button id="send" disabled>run</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const chat   = document.getElementById('chat');
+    const input  = document.getElementById('input');
+    const send   = document.getElementById('send');
+    const status = document.getElementById('status');
+    const conn   = document.getElementById('conn-status');
+
+    const socket = io();
+    let running  = false;
+    let sessionId = null;
+
+    socket.on('connect', () => {
+      conn.textContent = 'connected';
+      send.disabled    = false;
+    });
+    socket.on('disconnect', () => {
+      conn.textContent = 'disconnected';
+      send.disabled    = true;
+    });
+
+    function addMsg(role, text) {
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+      div.appendChild(bubble);
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return bubble;
+    }
+
+    function addStep(step) {
+      const div = document.createElement('div');
+      div.className = `step ${step.type}`;
+      div.textContent = `[${step.type}] ${step.content.slice(0, 120)}`;
+      chat.lastChild?.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    socket.on('start',  () => { running = true; status.textContent = 'thinking...'; });
+    socket.on('step',   (s) => { addStep(s); status.textContent = `${s.type}...`; });
+    socket.on('done',   (d) => {
+      running = false;
+      status.textContent = `done in ${d.duration}ms`;
+      addMsg('bot', d.output);
+      send.disabled = false;
+    });
+    socket.on('error',  (e) => {
+      running = false;
+      status.textContent = 'error';
+      addMsg('bot', `error: ${e.message}`);
+      send.disabled = false;
+    });
+
+    function submit() {
+      const text = input.value.trim();
+      if (!text || running) return;
+      addMsg('user', text);
+      input.value  = '';
+      send.disabled = true;
+      socket.emit('run', { input: text, sessionId });
+    }
+
+    send.addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+    });
+  </script>
+</body>
+</html>
