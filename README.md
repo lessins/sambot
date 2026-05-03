@@ -2,28 +2,24 @@
 
 **your local AI agent.**
 
-sambot runs on your machine and actually does things. it browses the web, reads and writes files, executes code, analyzes images, and carries out multi-step tasks — all from a single prompt.
+sambot runs on your machine and actually does things. it browses the web, reads and writes files, executes code in a sandbox, analyzes images, remembers context across sessions, and carries out multi-step tasks — all from a single prompt.
 
-no cloud middleman. no sending your files to someone else's server. it runs where you run it.
+no cloud middleman. no sending your files to someone else's server.
+
+test deployment: **[wlessin.com](https://wlessin.com)**
 
 ---
 
 ## what it does
 
-- **web** — searches, reads pages, follows links, summarizes
-- **code** — writes and executes in a sandboxed environment, reads back results
-- **files** — reads, writes, organizes files on your local machine
-- **vision** — describes and reasons over images and screenshots
-- **memory** — remembers context across sessions using local embeddings
-- **plugins** — extend with your own tools
-
-## status
-
-early. things break. building in public.
-
-test deployment: [wlessin.com](https://wlessin.com)
-
----
+| capability | tools |
+|-----------|-------|
+| **web** | `web_search`, `browser_fetch`, `browser_links` |
+| **code** | `run_code` (python / js / bash, sandboxed) |
+| **files** | `fs_read`, `fs_write`, `fs_list`, `fs_delete`, `fs_exists` |
+| **vision** | `analyze_image` (local file or URL) |
+| **memory** | sqlite + embedding search across sessions |
+| **plugins** | drop custom `.js` plugins in `~/.sambot/plugins/` |
 
 ## quick start
 
@@ -32,16 +28,63 @@ git clone https://github.com/lessins/sambot
 cd sambot
 npm install
 cp .env.example .env
-# add your API keys
+# add OPENAI_API_KEY or ANTHROPIC_API_KEY
 npm run dev
 ```
 
-## stack
+then open `http://localhost:4242` — or just run from the terminal:
+
+```bash
+npm run dev -- "summarise everything in my ~/Downloads folder"
+npm run dev -- "search for the latest rust release notes and save them to notes.md"
+npm run dev -- "what is in this screenshot" ./path/to/img.png
+```
+
+## local inference (no API key needed)
+
+sambot supports local GGUF models via native C bindings:
+
+```bash
+cd native && make HAVE_LLAMA=1
+# download a model — e.g. mistral-7b-instruct.Q4_K_M.gguf
+USE_LOCAL_LLM=true LOCAL_LLM_MODEL_PATH=./models/mistral.gguf npm run dev
+```
+
+## plugins
+
+drop a directory in `~/.sambot/plugins/` with a `plugin.json` manifest and an entrypoint file. sambot loads it on startup.
+
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "does a thing",
+  "entrypoint": "index.js"
+}
+```
+
+## self-hosting
+
+the web UI and API server are built in — just run `npm start` and point a reverse proxy at port 4242.
+
+```nginx
+location / {
+    proxy_pass http://localhost:4242;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+```
+
+the public test instance runs at [wlessin.com](https://wlessin.com).
+
+## tech
 
 - TypeScript / Node.js
-- local LLM inference via native C bindings (optional)
-- pluggable tool system
-- sqlite for memory
+- express + socket.io (streaming)
+- better-sqlite3 (memory)
+- C native bindings for local inference
+- pm2 for production process management
 
 ---
 
