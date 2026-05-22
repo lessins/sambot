@@ -1,29 +1,35 @@
 # sambot roadmap
 
-## done
-- [x] core agent loop
+## shipped
+- [x] core agent loop (tool dispatch, multi-step)
 - [x] web browsing + search
-- [x] image analysis
-- [x] code execution (sandboxed)
+- [x] image analysis (local + URL)
+- [x] sandboxed code execution (python/js/bash)
+- [x] filesystem tools
+- [x] persistent memory (sqlite + cosine search)
+- [x] plugin architecture (dynamic loading)
+- [x] web UI + socket.io streaming
+- [x] native C inference bridge (llama.cpp/GGUF)
+- [x] test suite
+- [x] wlessin.com deployment
+- [x] $SAMBOT token gate skeleton
+- [x] rate limiting + error handling
 
 ## in progress
-- [ ] filesystem tools (read/write/search local files)
-- [ ] persistent memory (vector store)
-- [ ] plugin architecture
+- [ ] wallet connect UI (for token gate)
+- [ ] $SAMBOT mint — contract address coming soon
+- [ ] screen capture + interaction tool
+- [ ] scheduled / cron tasks
 
 ## planned
-- [ ] voice input/output
-- [ ] screen capture + interaction
-- [ ] scheduled tasks / cron
-- [ ] multi-agent coordination
+- [ ] voice I/O
+- [ ] multi-agent coordination (spawn sub-agents for parallel tasks)
+- [ ] more plugin examples
+- [ ] mobile companion app (maybe)
 
-## thinking about
-- token-gated access tier for heavy compute features
-  - running a $SAMBOT token on solana — holders get priority inference,
-    extended context, and access to private plugins
-  - nothing confirmed yet, just thinking through the model
-- hosted version at wlessin.com for people who don't want to self-host
+## $SAMBOT token
+see [docs/token.md](./token.md)
 
 ---
 
-*this is a living doc — updated as priorities shift*
+*this is a living doc*
