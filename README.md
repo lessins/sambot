@@ -78,6 +78,14 @@ location / {
 
 the public test instance runs at [wlessin.com](https://wlessin.com).
 
+## $SAMBOT token
+
+certain features on [wlessin.com](https://wlessin.com) are gated by holding $SAMBOT — extended context, priority inference, private plugins.
+
+**contract: `EgBvRUFV3o36EwnfLhUh49qNMKbHokQ7AvtW5yTfpump`** (Solana)
+
+see [docs/token.md](docs/token.md) for tier details.
+
 ## tech
 
 - TypeScript / Node.js
